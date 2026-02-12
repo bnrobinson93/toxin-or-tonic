@@ -1,9 +1,11 @@
 import { Trophy, RotateCcw } from 'lucide-react'
+import { SignedOut } from '@clerk/clerk-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Separator } from '../ui/separator'
 import { getMaxGameScore, type Difficulty } from '../../lib/scoring'
+import SignInPrompt from '../auth/SignInPrompt'
 
 interface RoundSummary {
   primaryCorrect: boolean
@@ -103,6 +105,10 @@ export default function GameResults({
           </div>
         </CardContent>
       </Card>
+
+      <SignedOut>
+        <SignInPrompt />
+      </SignedOut>
     </div>
   )
 }
