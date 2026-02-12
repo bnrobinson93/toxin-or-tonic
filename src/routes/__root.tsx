@@ -2,12 +2,12 @@ import {
   HeadContent,
   Scripts,
   createRootRouteWithContext,
-  redirect,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
-import Header from '../components/Header'
+import GameShell from '../components/GameShell'
+import Footer from '../components/Footer'
 
 import ClerkProvider from '../integrations/clerk/provider'
 
@@ -15,7 +15,7 @@ import ConvexProvider from '../integrations/convex/provider'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
-import { getLocale, shouldRedirect } from '@/paraglide/runtime'
+import { getLocale } from '@/paraglide/runtime'
 
 import appCss from '../styles.css?url'
 
@@ -27,8 +27,6 @@ interface MyRouterContext {
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: async () => {
-    // Other redirect strategies are possible; see
-    // https://github.com/TanStack/router/tree/main/examples/react/i18n-paraglide#offline-redirect
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('lang', getLocale())
     }
@@ -44,7 +42,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Feed or Weed',
       },
     ],
     links: [
@@ -67,8 +65,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <ClerkProvider>
           <ConvexProvider>
-            <Header />
-            {children}
+            <GameShell>
+              {children}
+            </GameShell>
+            <Footer />
             <TanStackDevtools
               config={{
                 position: 'bottom-right',
