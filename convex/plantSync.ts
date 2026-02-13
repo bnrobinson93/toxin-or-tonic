@@ -1,6 +1,7 @@
 import { action, internalMutation } from './_generated/server'
 import { v } from 'convex/values'
 import { internal } from './_generated/api'
+import type { Id } from './_generated/dataModel'
 
 export const upsertPlant = internalMutation({
   args: {
@@ -100,104 +101,161 @@ export const createSyncLog = internalMutation({
   },
 })
 
-function determineCategory(
-  species: Record<string, unknown>,
-): 'edible' | 'medicinal' | 'neutral' | 'poisonous' {
-  const edibleParts = species.edible_parts as string[] | null
-  const medicinalUses = species.medicinal_uses as string[] | null
-  const isNoxious = species.noxious as boolean | null
-  const isToxic = species.toxic as boolean | null
+const FLORA_API_BASE = 'https://api.floraapi.com/v1'
 
-  if (isNoxious || isToxic) return 'poisonous'
-  if (edibleParts && edibleParts.length > 0) return 'edible'
-  if (medicinalUses && medicinalUses.length > 0) return 'medicinal'
+interface FloraSpeciesBasic {
+  id: number
+  scientific_name: string
+  common_names: string[]
+  family_name: string
+  genus_name: string
+  nativity: 'Native' | 'Non-Native' | 'Invasive'
+  invasive_alert: boolean
+  noxious: boolean
+  preferred_image_url: string | null
+}
+
+interface FloraSpeciesDetailed extends FloraSpeciesBasic {
+  description: string | null
+  habitat: string | null
+  details: string | null
+  images: string[]
+}
+
+interface FloraImage {
+  url: string
+  alt_text: string
+  license: string
+}
+
+function determineCategory(
+  species: FloraSpeciesBasic,
+  edibleParts: string[],
+  medicinalUses: string[],
+): 'edible' | 'medicinal' | 'neutral' | 'poisonous' {
+  if (species.noxious || species.invasive_alert) return 'poisonous'
+  if (edibleParts.length > 0) return 'edible'
+  if (medicinalUses.length > 0) return 'medicinal'
   return 'neutral'
 }
 
-function determineNativity(
-  species: Record<string, unknown>,
-): 'Native' | 'Non-Native' | 'Invasive' {
-  const invasive = species.invasive as boolean | null
-  const native = species.native as boolean | null
-
-  if (invasive) return 'Invasive'
-  if (native === false) return 'Non-Native'
-  return 'Native'
+function floraHeaders(apiKey: string) {
+  return { Authorization: `Bearer ${apiKey}` }
 }
 
 export const syncRegion = action({
   args: {
     regionCode: v.string(),
-    page: v.optional(v.float64()),
+    limit: v.optional(v.float64()),
+    offset: v.optional(v.float64()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ plantsAdded: number; plantsUpdated: number; logId: Id<'plantSyncLog'> }> => {
     const apiKey = process.env.FLORA_API_KEY
     if (!apiKey) throw new Error('FLORA_API_KEY not set')
 
     const logId = await ctx.runMutation(internal.plantSync.createSyncLog, {
       regionCode: args.regionCode,
-    })
+    }) as Id<'plantSyncLog'>
 
     let plantsAdded = 0
     let plantsUpdated = 0
-    const page = args.page ?? 1
+    const limit = args.limit ?? 50
+    const offset = args.offset ?? 0
 
     try {
-      const listRes = await fetch(
-        `https://floraapi.com/api/v1/regions/${args.regionCode}/species?page=${page}&per_page=50`,
-        { headers: { Authorization: `Bearer ${apiKey}` } },
-      )
+      // 1. List species in region
+      const listUrl = `${FLORA_API_BASE}/regions/${args.regionCode}/species?limit=${limit}&offset=${offset}`
+      const listRes = await fetch(listUrl, { headers: floraHeaders(apiKey) })
 
       if (!listRes.ok) {
         throw new Error(`Flora API list failed: ${listRes.status} ${await listRes.text()}`)
       }
 
-      const listData = (await listRes.json()) as {
-        data: Array<{ id: string; scientific_name: string }>
-      }
+      const speciesList = (await listRes.json()) as FloraSpeciesBasic[]
 
-      for (const item of listData.data) {
+      // 2. For each species, fetch details and images
+      for (const basic of speciesList) {
         try {
-          const [speciesRes, imagesRes] = await Promise.all([
-            fetch(`https://floraapi.com/api/v1/species/${item.id}`, {
-              headers: { Authorization: `Bearer ${apiKey}` },
+          const [detailRes, imagesRes] = await Promise.all([
+            fetch(`${FLORA_API_BASE}/species/${basic.id}`, {
+              headers: floraHeaders(apiKey),
             }),
-            fetch(`https://floraapi.com/api/v1/species/${item.id}/images`, {
-              headers: { Authorization: `Bearer ${apiKey}` },
+            fetch(`${FLORA_API_BASE}/species/${basic.id}/images`, {
+              headers: floraHeaders(apiKey),
             }),
           ])
 
-          if (!speciesRes.ok) continue
+          // Use detail data if available, fall back to basic
+          const species: FloraSpeciesDetailed = detailRes.ok
+            ? await detailRes.json()
+            : { ...basic, description: null, habitat: null, details: null, images: [] }
 
-          const species = (await speciesRes.json()) as Record<string, unknown>
-          const imagesData = imagesRes.ok
-            ? ((await imagesRes.json()) as { data: Array<{ url: string }> })
-            : { data: [] }
+          const imagesData: { images: FloraImage[] } = imagesRes.ok
+            ? await imagesRes.json()
+            : { images: [] }
 
-          const imageUrls = imagesData.data.map((img) => img.url)
-          const commonNames = (species.common_names as string[] | null) ?? []
-          const scientificName = (species.scientific_name as string) ?? item.scientific_name
-          const familyName = (species.family as string) ?? ''
-          const genusName = (species.genus as string) ?? ''
-          const medicinalUses = (species.medicinal_uses as string[] | null) ?? []
-          const edibleParts = (species.edible_parts as string[] | null) ?? []
-          const nutritionalInfo = (species.nutritional_info as string) ?? undefined
-          const toxicityInfo = (species.toxicity_info as string) ?? undefined
+          const imageUrls = imagesData.images.map((img) => img.url)
+          // Also include images from the detail response
+          if (species.images) {
+            for (const url of species.images) {
+              if (!imageUrls.includes(url)) imageUrls.push(url)
+            }
+          }
+          // Include preferred_image_url if set
+          if (basic.preferred_image_url && !imageUrls.includes(basic.preferred_image_url)) {
+            imageUrls.unshift(basic.preferred_image_url)
+          }
+
+          // Fetch edible info via search endpoint
+          const edibleParts: string[] = []
+          const medicinalUses: string[] = []
+
+          // Use the search endpoint to check edibility
+          const edibleRes = await fetch(
+            `${FLORA_API_BASE}/search?q=${encodeURIComponent(species.scientific_name)}&edible=true&limit=1`,
+            { headers: floraHeaders(apiKey) },
+          )
+          if (edibleRes.ok) {
+            const edibleData = (await edibleRes.json()) as { results: Array<Record<string, unknown>> }
+            if (edibleData.results?.length > 0) {
+              const match = edibleData.results[0]
+              const parts = match.edible_parts as string[] | undefined
+              if (parts) edibleParts.push(...parts)
+            }
+          }
+
+          // Check medicinal via search
+          const medRes = await fetch(
+            `${FLORA_API_BASE}/search?q=${encodeURIComponent(species.scientific_name)}&medicinal=true&limit=1`,
+            { headers: floraHeaders(apiKey) },
+          )
+          if (medRes.ok) {
+            const medData = (await medRes.json()) as { results: Array<Record<string, unknown>> }
+            if (medData.results?.length > 0) {
+              medicinalUses.push('medicinal')
+            }
+          }
+
+          const nativity = species.nativity ?? 'Native'
+          const validNativity: 'Native' | 'Non-Native' | 'Invasive' =
+            nativity === 'Native' || nativity === 'Non-Native' || nativity === 'Invasive'
+              ? nativity
+              : 'Native'
 
           const result = await ctx.runMutation(internal.plantSync.upsertPlant, {
-            floraApiId: String(item.id),
-            scientificName,
-            commonNames,
-            familyName,
-            genusName,
-            category: determineCategory(species),
+            floraApiId: String(basic.id),
+            scientificName: species.scientific_name,
+            commonNames: species.common_names ?? [],
+            familyName: species.family_name ?? '',
+            genusName: species.genus_name ?? '',
+            category: determineCategory(species, edibleParts, medicinalUses),
             medicinalUses,
             edibleParts,
-            nutritionalInfo,
-            toxicityInfo,
+            nutritionalInfo: undefined,
+            toxicityInfo: species.noxious ? 'Noxious plant - potentially harmful' : undefined,
             imageUrls,
-            preferredImageUrl: imageUrls[0],
-            nativity: determineNativity(species),
+            preferredImageUrl: imageUrls[0] ?? basic.preferred_image_url ?? undefined,
+            nativity: validNativity,
             regionCode: args.regionCode,
           })
 
@@ -207,7 +265,7 @@ export const syncRegion = action({
           await ctx.runMutation(internal.plantSync.updateSyncLog, {
             logId,
             status: 'in_progress',
-            error: `Failed to sync species ${item.id}: ${err}`,
+            error: `Failed to sync species ${basic.id}: ${err}`,
           })
         }
       }
