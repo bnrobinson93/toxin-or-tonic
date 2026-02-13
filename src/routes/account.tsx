@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { useUser, useAuth } from '@clerk/clerk-react'
+import { useUser, useAuth } from '@clerk/tanstack-react-start'
 import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import AccountPageComponent from '../components/auth/AccountPage'

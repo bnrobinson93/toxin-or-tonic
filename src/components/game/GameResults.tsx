@@ -1,5 +1,5 @@
 import { Trophy, RotateCcw } from 'lucide-react'
-import { SignedOut } from '@clerk/clerk-react'
+import { SignedOut } from '@clerk/tanstack-react-start'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'

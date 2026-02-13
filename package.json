@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.49.0",
+    "@clerk/tanstack-react-start": "^0.29.1",
     "@convex-dev/react-query": "0.1.0",
     "@faker-js/faker": "^10.0.0",
     "@fontsource/fredoka": "^5.2.10",

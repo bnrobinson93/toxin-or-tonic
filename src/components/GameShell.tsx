@@ -5,7 +5,7 @@ import {
   SignedOut,
   SignInButton,
   UserButton,
-} from '@clerk/clerk-react'
+} from '@clerk/tanstack-react-start'
 import { Button } from './ui/button'
 
 export default function GameShell({ children }: { children: React.ReactNode }) {
