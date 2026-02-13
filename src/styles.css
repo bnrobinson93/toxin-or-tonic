@@ -132,3 +132,56 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Game animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+@keyframes correct-pulse {
+  0% { box-shadow: 0 0 0 0 oklch(0.55 0.16 145 / 0.5); }
+  70% { box-shadow: 0 0 0 10px oklch(0.55 0.16 145 / 0); }
+  100% { box-shadow: 0 0 0 0 oklch(0.55 0.16 145 / 0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes score-count {
+  from { opacity: 0; transform: scale(0.8); }
+  50% { transform: scale(1.15); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.animate-correct-pulse {
+  animation: correct-pulse 0.6s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out both;
+}
+
+.animate-score-count {
+  animation: score-count 0.4s ease-out both;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

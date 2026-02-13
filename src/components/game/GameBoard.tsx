@@ -256,18 +256,26 @@ export default function GameBoard({
   const latestResult = roundResults[roundResults.length - 1]
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl mx-auto space-y-4" role="main" aria-label="Game board">
       <div className="flex items-center justify-between">
         <RoundIndicator currentRound={currentRound} totalRounds={3} />
         <ScoreDisplay score={totalScore} maxScore={maxScore} />
       </div>
 
+      {/* Screen reader round announcement */}
+      <div className="sr-only" role="status" aria-live="polite">
+        Round {currentRound + 1} of 3.
+        {phase === 'answering' && 'Choose your answer.'}
+        {phase === 'bonus' && 'Bonus question available.'}
+        {phase === 'result' && 'Round complete.'}
+      </div>
+
       {phase !== 'result' && (
-        <>
+        <div className="animate-slide-up space-y-4">
           <PlantImage imageUrl={roundData.plantImageUrl} />
 
           <div className="space-y-2">
-            <p className="font-display font-medium text-sm">
+            <p className="font-display font-medium text-sm" id="primary-question">
               {difficulty === 'easy'
                 ? 'Is this plant edible, medicinal, neutral, or poisonous?'
                 : 'What is this plant?'}
@@ -278,12 +286,12 @@ export default function GameBoard({
               selectedAnswer={primaryAnswer}
               onSelect={handlePrimaryAnswer}
               disabled={phase !== 'answering'}
-              columns={difficulty === 'easy' ? 2 : 2}
+              columns={2}
             />
           </div>
 
           {phase === 'bonus' && (
-            <div className="space-y-2">
+            <div className="space-y-2 animate-slide-up">
               <BonusQuestion
                 question={bonusQuestionRef.current}
                 options={bonusOptionsRef.current}
@@ -294,24 +302,27 @@ export default function GameBoard({
               />
               <button
                 onClick={handleSkipBonus}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors min-h-[44px] px-2"
+                aria-label="Skip the bonus question"
               >
                 Skip bonus question
               </button>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {phase === 'result' && latestResult && (
-        <RoundResult
-          primaryCorrect={latestResult.primaryCorrect}
-          bonusCorrect={latestResult.bonusCorrect}
-          roundScore={latestResult.score}
-          plant={latestResult.plant}
-          onContinue={handleContinue}
-          isLastRound={currentRound >= 2}
-        />
+        <div className="animate-slide-up">
+          <RoundResult
+            primaryCorrect={latestResult.primaryCorrect}
+            bonusCorrect={latestResult.bonusCorrect}
+            roundScore={latestResult.score}
+            plant={latestResult.plant}
+            onContinue={handleContinue}
+            isLastRound={currentRound >= 2}
+          />
+        </div>
       )}
     </div>
   )

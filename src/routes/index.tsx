@@ -63,6 +63,7 @@ function HomePage() {
 
   // Fetch random plants when a difficulty is selected
   const [pendingDifficulty, setPendingDifficulty] = useState<Difficulty | null>(null)
+  const [randomThreshold, setRandomThreshold] = useState(() => Math.random())
   const randomPlants = useQuery(
     api.plants.getRandomPlants,
     pendingDifficulty && location
@@ -70,7 +71,7 @@ function HomePage() {
           regionCode: location.regionCode,
           difficulty: pendingDifficulty,
           count: 3,
-          randomThreshold: Math.random(),
+          randomThreshold,
         }
       : 'skip',
   )
@@ -134,6 +135,7 @@ function HomePage() {
   }
 
   const handlePlayAgain = () => {
+    setRandomThreshold(Math.random())
     setGameState({ phase: 'select' })
   }
 

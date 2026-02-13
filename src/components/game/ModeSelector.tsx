@@ -54,8 +54,12 @@ export default function ModeSelector({ onSelect }: ModeSelectorProps) {
         {modes.map((mode) => (
           <Card
             key={mode.difficulty}
-            className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+            className="cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 outline-none"
             onClick={() => onSelect(mode.difficulty)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(mode.difficulty) } }}
+            tabIndex={0}
+            role="button"
+            aria-label={`Play ${mode.difficulty} mode: ${mode.title}. Max score ${mode.maxScore}`}
           >
             <CardHeader className="text-center pb-2">
               <div
