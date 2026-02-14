@@ -36,14 +36,21 @@ export const getRandomPlants = query({
     }
 
     // Filter by region and nativity based on difficulty
-    const filtered = plants.filter((p) => {
-      if (excludeSet.has(p._id)) return false
-      if (!p.regionCodes.includes(args.regionCode)) return false
-      if (!p.preferredImageUrl && p.imageUrls.length === 0) return false
-      // Easy/medium: native only. Hard: all nativity types.
-      if (args.difficulty !== 'hard' && p.nativity !== 'Native') return false
-      return true
-    })
+    // Prefer plants with images, but allow those without if needed
+    const withImages: typeof plants = []
+    const withoutImages: typeof plants = []
+    for (const p of plants) {
+      if (excludeSet.has(p._id)) continue
+      if (!p.regionCodes.includes(args.regionCode)) continue
+      if (args.difficulty !== 'hard' && p.nativity !== 'Native') continue
+      if (p.preferredImageUrl || p.imageUrls.length > 0) {
+        withImages.push(p)
+      } else {
+        withoutImages.push(p)
+      }
+    }
+    // Use plants with images first, then fill with those without
+    const filtered = [...withImages, ...withoutImages]
 
     return filtered.slice(0, args.count)
   },

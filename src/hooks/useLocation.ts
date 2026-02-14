@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { stateFromCoordinates } from '../lib/stateBoundingBoxes'
 
 export interface LocationData {
   regionCode: string
@@ -90,10 +91,12 @@ export function useLocation() {
       const { latitude, longitude } = position.coords
       const geo = await reverseGeocode(latitude, longitude)
 
-      if (geo) {
+      const resolved = geo ?? stateFromCoordinates(latitude, longitude)
+
+      if (resolved) {
         const data: LocationData = {
-          regionCode: geo.stateCode,
-          locationLabel: geo.stateName,
+          regionCode: resolved.stateCode,
+          locationLabel: resolved.stateName,
           latitude,
           longitude,
         }

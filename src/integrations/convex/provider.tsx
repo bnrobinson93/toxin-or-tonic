@@ -1,6 +1,4 @@
-import { ConvexProviderWithClerk } from 'convex/react-clerk'
-import { ConvexReactClient } from 'convex/react'
-import { useAuth } from '@clerk/tanstack-react-start'
+import { ConvexProvider, ConvexReactClient } from 'convex/react'
 
 const CONVEX_URL = (import.meta as any).env.VITE_CONVEX_URL
 if (!CONVEX_URL) {
@@ -14,9 +12,5 @@ export default function AppConvexProvider({
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-      {children}
-    </ConvexProviderWithClerk>
-  )
+  return <ConvexProvider client={convex}>{children}</ConvexProvider>
 }

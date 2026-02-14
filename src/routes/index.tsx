@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
-import { useMutation, useQuery } from 'convex/react'
+import { useState, useEffect, useRef } from 'react'
+import { useAction, useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 import { nanoid } from 'nanoid'
@@ -60,10 +60,15 @@ function HomePage() {
   const [startingGame, setStartingGame] = useState(false)
 
   const startGame = useMutation(api.games.startGame)
+  const syncRegion = useAction(api.plantSync.syncRegion)
 
   // Fetch random plants when a difficulty is selected
   const [pendingDifficulty, setPendingDifficulty] = useState<Difficulty | null>(null)
   const [randomThreshold, setRandomThreshold] = useState(() => Math.random())
+  const [syncing, setSyncing] = useState(false)
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const syncAttemptedRef = useRef<string | null>(null)
+
   const randomPlants = useQuery(
     api.plants.getRandomPlants,
     pendingDifficulty && location
@@ -75,6 +80,36 @@ function HomePage() {
         }
       : 'skip',
   )
+
+  // Auto-sync when not enough plants for the selected region
+  useEffect(() => {
+    if (!pendingDifficulty || !location || startingGame || syncing) return
+    if (!randomPlants || randomPlants.length >= 3) return
+    // Only attempt once per region to avoid loops
+    if (syncAttemptedRef.current === location.regionCode) return
+
+    syncAttemptedRef.current = location.regionCode
+    setSyncing(true)
+    setSyncError(null)
+
+    syncRegion({ regionCode: location.regionCode })
+      .then((result) => {
+        if (result.plantsAdded === 0 && result.plantsUpdated === 0) {
+          setSyncError(`No plant data available from Flora API for ${location.regionCode}.`)
+          setPendingDifficulty(null)
+        } else {
+          // Convex reactive query will auto-update with new data.
+          // Bump the threshold to re-query.
+          setRandomThreshold(Math.random())
+        }
+      })
+      .catch((err) => {
+        console.error('Auto-sync failed:', err)
+        setSyncError(`Failed to fetch plant data: ${String(err)}`)
+        setPendingDifficulty(null)
+      })
+      .finally(() => setSyncing(false))
+  }, [randomPlants, pendingDifficulty, location, startingGame, syncing, syncRegion])
 
   useEffect(() => {
     if (!randomPlants || !pendingDifficulty || !location || startingGame) return
@@ -113,6 +148,9 @@ function HomePage() {
 
   const handleModeSelect = (difficulty: Difficulty) => {
     if (!location) return
+    setSyncError(null)
+    // Reset sync attempt if trying a new difficulty
+    syncAttemptedRef.current = null
     setPendingDifficulty(difficulty)
   }
 
@@ -158,7 +196,7 @@ function HomePage() {
         <LocationPrompt
           onAllow={requestGeolocation}
           onDeny={() => setManualLocation('OR', 'Oregon')}
-          loading={false}
+          loading={locationLoading}
         />
       </div>
     )
@@ -185,13 +223,28 @@ function HomePage() {
 
       {gameState.phase === 'select' && (
         <>
-          {pendingDifficulty || startingGame ? (
+          {syncError ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center space-y-3">
+                <p className="text-sm text-destructive">{syncError}</p>
+                <button
+                  onClick={() => {
+                    setSyncError(null)
+                    syncAttemptedRef.current = null
+                  }}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          ) : pendingDifficulty || startingGame ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center space-y-2">
                 <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-sm text-muted-foreground">
-                  {randomPlants && randomPlants.length < 3
-                    ? `Not enough plant data for ${location.regionCode}. Try seeding first.`
+                  {syncing
+                    ? `Fetching plant data for ${location.regionCode}...`
                     : 'Setting up your game...'}
                 </p>
               </div>
