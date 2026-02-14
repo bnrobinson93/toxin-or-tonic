@@ -122,6 +122,35 @@ interface FloraSpeciesDetailed extends FloraSpeciesBasic {
   images: string[]
 }
 
+async function fetchWikimediaImage(
+  scientificName: string,
+  commonName?: string,
+): Promise<string | null> {
+  // Search Wikimedia Commons for a plant photo, trying scientific name first
+  for (const query of [scientificName, commonName].filter(Boolean)) {
+    try {
+      const res = await fetch(
+        `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query!)}&gsrnamespace=6&gsrlimit=3&prop=imageinfo&iiprop=url|mime&iiurlwidth=800&format=json`,
+      )
+      if (!res.ok) continue
+      const data = (await res.json()) as {
+        query?: { pages?: Record<string, { imageinfo?: Array<{ url: string; thumburl?: string; mime: string }> }> }
+      }
+      const pages = data.query?.pages
+      if (!pages) continue
+      for (const page of Object.values(pages)) {
+        const info = page.imageinfo?.[0]
+        if (info && info.mime.startsWith('image/')) {
+          return info.thumburl ?? info.url
+        }
+      }
+    } catch {
+      // Continue to next query
+    }
+  }
+  return null
+}
+
 function determineCategory(
   species: FloraSpeciesBasic,
   edibleParts: string[],
@@ -242,6 +271,15 @@ export const syncRegion = action({
             // 3. From list preferred_image_url
             if (basic.preferred_image_url && !imageUrls.includes(basic.preferred_image_url)) {
               imageUrls.unshift(basic.preferred_image_url)
+            }
+
+            // 4. Fallback: Wikimedia Commons if no images found
+            if (imageUrls.length === 0) {
+              const wikiImage = await fetchWikimediaImage(
+                basic.scientific_name,
+                basic.common_names?.[0],
+              )
+              if (wikiImage) imageUrls.push(wikiImage)
             }
 
             const edibleParts: string[] = []
