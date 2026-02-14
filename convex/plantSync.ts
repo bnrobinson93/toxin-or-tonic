@@ -122,27 +122,59 @@ interface FloraSpeciesDetailed extends FloraSpeciesBasic {
   images: string[]
 }
 
-async function fetchWikimediaImage(
+async function fetchFallbackImage(
   scientificName: string,
   commonName?: string,
 ): Promise<string | null> {
-  // Search Wikimedia Commons for a plant photo, trying scientific name first
+  // 1. Try iNaturalist first — always real photos, never drawings
+  try {
+    const inatRes = await fetch(
+      `https://api.inaturalist.org/v1/taxa?q=${encodeURIComponent(scientificName)}&rank=species&per_page=1`,
+    )
+    if (inatRes.ok) {
+      const inatData = (await inatRes.json()) as {
+        results?: Array<{ default_photo?: { medium_url?: string; url?: string } }>
+      }
+      const photo = inatData.results?.[0]?.default_photo
+      // medium_url gives ~500px wide, url gives square thumbnail
+      const photoUrl = photo?.medium_url ?? photo?.url
+      if (photoUrl) return photoUrl
+    }
+  } catch {
+    // Fall through to Wikimedia
+  }
+
+  // 2. Try Wikimedia Commons — filter to photos (jpeg/png), skip drawings/SVG
   for (const query of [scientificName, commonName].filter(Boolean)) {
     try {
       const res = await fetch(
-        `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query!)}&gsrnamespace=6&gsrlimit=3&prop=imageinfo&iiprop=url|mime&iiurlwidth=800&format=json`,
+        `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query!)}&gsrnamespace=6&gsrlimit=5&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=800&format=json`,
       )
       if (!res.ok) continue
       const data = (await res.json()) as {
-        query?: { pages?: Record<string, { imageinfo?: Array<{ url: string; thumburl?: string; mime: string }> }> }
+        query?: {
+          pages?: Record<string, {
+            title?: string
+            imageinfo?: Array<{
+              url: string
+              thumburl?: string
+              mime: string
+              extmetadata?: { Categories?: { value?: string } }
+            }>
+          }>
+        }
       }
       const pages = data.query?.pages
       if (!pages) continue
       for (const page of Object.values(pages)) {
         const info = page.imageinfo?.[0]
-        if (info && info.mime.startsWith('image/')) {
-          return info.thumburl ?? info.url
-        }
+        if (!info) continue
+        // Only accept raster photo formats
+        if (info.mime !== 'image/jpeg' && info.mime !== 'image/png') continue
+        // Skip likely drawings/illustrations by filename
+        const title = (page.title ?? '').toLowerCase()
+        if (title.includes('illustration') || title.includes('drawing') || title.includes('sketch')) continue
+        return info.thumburl ?? info.url
       }
     } catch {
       // Continue to next query
@@ -273,13 +305,13 @@ export const syncRegion = action({
               imageUrls.unshift(basic.preferred_image_url)
             }
 
-            // 4. Fallback: Wikimedia Commons if no images found
+            // 4. Fallback: iNaturalist → Wikimedia Commons if no images found
             if (imageUrls.length === 0) {
-              const wikiImage = await fetchWikimediaImage(
+              const fallbackImage = await fetchFallbackImage(
                 basic.scientific_name,
                 basic.common_names?.[0],
               )
-              if (wikiImage) imageUrls.push(wikiImage)
+              if (fallbackImage) imageUrls.push(fallbackImage)
             }
 
             const edibleParts: string[] = []

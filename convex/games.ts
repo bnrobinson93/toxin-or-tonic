@@ -192,6 +192,8 @@ export const submitAnswer = mutation({
         totalScore: newTotalScore,
         regionCode: session.regionCode,
         locationLabel: session.locationLabel,
+        latitude: session.latitude,
+        longitude: session.longitude,
         completedAt: Date.now(),
       })
     }

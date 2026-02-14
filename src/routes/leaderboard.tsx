@@ -18,9 +18,6 @@ const ANON_ID_KEY = 'fow_anonymous_id'
 
 function LeaderboardPage() {
   const { location } = useLocation()
-  const [regionCode, setRegionCode] = useState(
-    location?.regionCode ?? 'OR',
-  )
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
 
   const playerId =
@@ -28,16 +25,22 @@ function LeaderboardPage() {
       ? localStorage.getItem(ANON_ID_KEY) ?? ''
       : ''
 
-  const entries = useQuery(api.leaderboard.getRegionalLeaderboard, {
-    regionCode,
+  const entries = useQuery(api.leaderboard.getNearbyLeaderboard, {
+    latitude: location?.latitude,
+    longitude: location?.longitude,
     difficulty,
-    limit: 25,
+    limit: 10,
   })
 
   const playerRank = useQuery(
     api.leaderboard.getPlayerRank,
     playerId
-      ? { playerId, regionCode, difficulty }
+      ? {
+          playerId,
+          latitude: location?.latitude,
+          longitude: location?.longitude,
+          difficulty,
+        }
       : 'skip',
   )
 
@@ -49,9 +52,7 @@ function LeaderboardPage() {
       </div>
 
       <LeaderboardFilters
-        regionCode={regionCode}
         difficulty={difficulty}
-        onRegionChange={setRegionCode}
         onDifficultyChange={setDifficulty}
       />
 

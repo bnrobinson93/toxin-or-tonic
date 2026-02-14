@@ -82,6 +82,8 @@ export default defineSchema({
     totalScore: v.float64(),
     regionCode: v.string(),
     locationLabel: v.optional(v.string()),
+    latitude: v.optional(v.float64()),
+    longitude: v.optional(v.float64()),
     completedAt: v.float64(),
   })
     .index('by_region_difficulty_score', [
@@ -89,6 +91,7 @@ export default defineSchema({
       'difficulty',
       'totalScore',
     ])
+    .index('by_difficulty', ['difficulty'])
     .index('by_playerId', ['playerId']),
 
   userProfiles: defineTable({
