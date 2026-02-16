@@ -1,5 +1,5 @@
-import { defineSchema, defineTable } from 'convex/server'
-import { v } from 'convex/values'
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
 
 export default defineSchema({
   plants: defineTable({
@@ -9,10 +9,10 @@ export default defineSchema({
     familyName: v.string(),
     genusName: v.string(),
     category: v.union(
-      v.literal('edible'),
-      v.literal('medicinal'),
-      v.literal('neutral'),
-      v.literal('poisonous'),
+      v.literal("edible"),
+      v.literal("medicinal"),
+      v.literal("neutral"),
+      v.literal("poisonous"),
     ),
     medicinalUses: v.array(v.string()),
     edibleParts: v.array(v.string()),
@@ -20,42 +20,69 @@ export default defineSchema({
     toxicityInfo: v.optional(v.string()),
     imageUrls: v.array(v.string()),
     preferredImageUrl: v.optional(v.string()),
+    // Enrichment fields (populated during sync, optional for backward compat)
+    description: v.optional(v.string()),
+    habitat: v.optional(v.string()),
+    details: v.optional(v.string()),
+    flowerColors: v.optional(v.array(v.string())),
+    fruitColors: v.optional(v.array(v.string())),
+    leafColors: v.optional(v.array(v.string())),
+    bloomMonths: v.optional(v.array(v.string())),
+    floweringSeasons: v.optional(v.array(v.string())),
+    plantHabits: v.optional(v.array(v.string())),
+    lightRequirements: v.optional(v.string()),
+    soilMoisture: v.optional(v.string()),
+    waterUse: v.optional(v.string()),
+    imageGallery: v.optional(
+      v.array(
+        v.object({
+          url: v.string(),
+          altText: v.optional(v.string()),
+          license: v.optional(v.string()),
+        }),
+      ),
+    ),
+    parsedMedicinalInfo: v.optional(v.array(v.string())),
+    parsedToxicityInfo: v.optional(v.array(v.string())),
+    parsedEdibilityInfo: v.optional(v.array(v.string())),
+    identificationTips: v.optional(v.array(v.string())),
+    enrichmentVersion: v.optional(v.float64()),
     nativity: v.union(
-      v.literal('Native'),
-      v.literal('Non-Native'),
-      v.literal('Invasive'),
+      v.literal("Native"),
+      v.literal("Non-Native"),
+      v.literal("Invasive"),
     ),
     regionCodes: v.array(v.string()),
     randomSortKey: v.float64(),
     lastSyncedAt: v.float64(),
   })
-    .index('by_floraApiId', ['floraApiId'])
-    .index('by_category', ['category'])
-    .index('by_nativity', ['nativity'])
-    .index('by_randomSortKey', ['randomSortKey']),
+    .index("by_floraApiId", ["floraApiId"])
+    .index("by_category", ["category"])
+    .index("by_nativity", ["nativity"])
+    .index("by_randomSortKey", ["randomSortKey"]),
 
   gameSessions: defineTable({
     playerId: v.string(),
     isAnonymous: v.boolean(),
     difficulty: v.union(
-      v.literal('easy'),
-      v.literal('medium'),
-      v.literal('hard'),
+      v.literal("easy"),
+      v.literal("medium"),
+      v.literal("hard"),
     ),
     regionCode: v.string(),
     totalScore: v.float64(),
     currentRound: v.float64(),
     status: v.union(
-      v.literal('in_progress'),
-      v.literal('completed'),
-      v.literal('abandoned'),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("abandoned"),
     ),
     latitude: v.optional(v.float64()),
     longitude: v.optional(v.float64()),
     locationLabel: v.optional(v.string()),
     rounds: v.array(
       v.object({
-        plantId: v.id('plants'),
+        plantId: v.id("plants"),
         primaryAnswer: v.optional(v.string()),
         primaryCorrect: v.optional(v.boolean()),
         bonusAnswer: v.optional(v.string()),
@@ -65,19 +92,19 @@ export default defineSchema({
       }),
     ),
   })
-    .index('by_playerId', ['playerId'])
-    .index('by_status', ['status'])
-    .index('by_score_and_difficulty', ['difficulty', 'totalScore']),
+    .index("by_playerId", ["playerId"])
+    .index("by_status", ["status"])
+    .index("by_score_and_difficulty", ["difficulty", "totalScore"]),
 
   leaderboardEntries: defineTable({
     playerId: v.string(),
     displayName: v.string(),
     avatarUrl: v.optional(v.string()),
-    gameSessionId: v.id('gameSessions'),
+    gameSessionId: v.id("gameSessions"),
     difficulty: v.union(
-      v.literal('easy'),
-      v.literal('medium'),
-      v.literal('hard'),
+      v.literal("easy"),
+      v.literal("medium"),
+      v.literal("hard"),
     ),
     totalScore: v.float64(),
     regionCode: v.string(),
@@ -86,13 +113,13 @@ export default defineSchema({
     longitude: v.optional(v.float64()),
     completedAt: v.float64(),
   })
-    .index('by_region_difficulty_score', [
-      'regionCode',
-      'difficulty',
-      'totalScore',
+    .index("by_region_difficulty_score", [
+      "regionCode",
+      "difficulty",
+      "totalScore",
     ])
-    .index('by_difficulty', ['difficulty'])
-    .index('by_playerId', ['playerId']),
+    .index("by_difficulty", ["difficulty"])
+    .index("by_playerId", ["playerId"]),
 
   userProfiles: defineTable({
     clerkUserId: v.string(),
@@ -107,15 +134,15 @@ export default defineSchema({
     latitude: v.optional(v.float64()),
     longitude: v.optional(v.float64()),
     locationLabel: v.optional(v.string()),
-  }).index('by_clerkUserId', ['clerkUserId']),
+  }).index("by_clerkUserId", ["clerkUserId"]),
 
   plantSyncLog: defineTable({
     regionCode: v.string(),
     status: v.union(
-      v.literal('pending'),
-      v.literal('in_progress'),
-      v.literal('completed'),
-      v.literal('failed'),
+      v.literal("pending"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("failed"),
     ),
     plantsAdded: v.float64(),
     plantsUpdated: v.float64(),
@@ -123,6 +150,6 @@ export default defineSchema({
     startedAt: v.float64(),
     completedAt: v.optional(v.float64()),
   })
-    .index('by_regionCode', ['regionCode'])
-    .index('by_status', ['status']),
-})
+    .index("by_regionCode", ["regionCode"])
+    .index("by_status", ["status"]),
+});
