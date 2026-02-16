@@ -35,6 +35,7 @@ type GameState =
     }
 
 const ANON_ID_KEY = 'fow_anonymous_id'
+const SEEN_PLANTS_PREFIX = 'fow_seen_plants_'
 
 function getAnonymousId(): string {
   let id = localStorage.getItem(ANON_ID_KEY)
@@ -43,6 +44,26 @@ function getAnonymousId(): string {
     localStorage.setItem(ANON_ID_KEY, id)
   }
   return id
+}
+
+function getSeenPlantIds(regionCode: string): string[] {
+  try {
+    const raw = localStorage.getItem(SEEN_PLANTS_PREFIX + regionCode)
+    if (!raw) return []
+    return JSON.parse(raw) as string[]
+  } catch {
+    return []
+  }
+}
+
+function addSeenPlantIds(regionCode: string, ids: string[]) {
+  const existing = getSeenPlantIds(regionCode)
+  const merged = [...new Set([...existing, ...ids])]
+  localStorage.setItem(SEEN_PLANTS_PREFIX + regionCode, JSON.stringify(merged))
+}
+
+function clearSeenPlantIds(regionCode: string) {
+  localStorage.removeItem(SEEN_PLANTS_PREFIX + regionCode)
 }
 
 function HomePage() {
@@ -68,6 +89,9 @@ function HomePage() {
   const [syncing, setSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
   const syncAttemptedRef = useRef<string | null>(null)
+  const lastUsedPlantIds = useRef<string[]>([])
+
+  const seenPlantIds = location ? getSeenPlantIds(location.regionCode) : []
 
   const randomPlants = useQuery(
     api.plants.getRandomPlants,
@@ -76,6 +100,7 @@ function HomePage() {
           regionCode: location.regionCode,
           difficulty: pendingDifficulty,
           count: 3,
+          excludeIds: seenPlantIds.length > 0 ? seenPlantIds as Id<'plants'>[] : undefined,
           randomThreshold,
         }
       : 'skip',
@@ -88,11 +113,22 @@ function HomePage() {
     // Only attempt once per region to avoid loops
     if (syncAttemptedRef.current === location.regionCode) return
 
+    // If we have seen plants but got < 3 results, the pool may be exhausted.
+    // Try clearing seen list first before fetching more from the API.
+    const seen = getSeenPlantIds(location.regionCode)
+    if (seen.length > 0 && randomPlants.length < 3) {
+      clearSeenPlantIds(location.regionCode)
+      setRandomThreshold(Math.random())
+      return
+    }
+
     syncAttemptedRef.current = location.regionCode
     setSyncing(true)
     setSyncError(null)
 
-    syncRegion({ regionCode: location.regionCode })
+    // Use offset based on how many plants we've already seen to fetch the next batch
+    const offset = seen.length
+    syncRegion({ regionCode: location.regionCode, offset })
       .then((result) => {
         if (result.plantsAdded === 0 && result.plantsUpdated === 0) {
           setSyncError(`No plant data available from Flora API for ${location.regionCode}.`)
@@ -119,6 +155,8 @@ function HomePage() {
       setStartingGame(true)
       try {
         const playerId = getAnonymousId()
+        const plantIds = randomPlants.slice(0, 3).map((p) => p._id)
+        lastUsedPlantIds.current = plantIds as string[]
         const sessionId = await startGame({
           playerId,
           isAnonymous: true,
@@ -127,7 +165,7 @@ function HomePage() {
           latitude: location.latitude,
           longitude: location.longitude,
           locationLabel: location.locationLabel,
-          plantIds: randomPlants.slice(0, 3).map((p) => p._id),
+          plantIds,
         })
 
         setGameState({
@@ -161,9 +199,16 @@ function HomePage() {
       bonusCorrect: boolean
       score: number
       plantName: string
+      plantId?: string
     }>
   }) => {
     if (gameState.phase !== 'playing') return
+
+    // Track seen plants to avoid repetition
+    if (location && lastUsedPlantIds.current.length > 0) {
+      addSeenPlantIds(location.regionCode, lastUsedPlantIds.current)
+    }
+
     setGameState({
       phase: 'results',
       difficulty: gameState.difficulty,
@@ -173,6 +218,7 @@ function HomePage() {
   }
 
   const handlePlayAgain = () => {
+    syncAttemptedRef.current = null
     setRandomThreshold(Math.random())
     setGameState({ phase: 'select' })
   }
