@@ -57,24 +57,38 @@ async function reverseGeocode(
   }
 }
 
+async function ipGeolocate(): Promise<LocationData | null> {
+  try {
+    // Free IP geolocation — returns US state info
+    const res = await fetch('https://ipapi.co/json/')
+    if (!res.ok) return null
+    const data = (await res.json()) as {
+      region_code?: string
+      region?: string
+      latitude?: number
+      longitude?: number
+      country_code?: string
+    }
+    // Only use for US locations
+    if (data.country_code !== 'US' || !data.region_code || !data.region) return null
+    return {
+      regionCode: data.region_code,
+      locationLabel: data.region,
+      latitude: data.latitude,
+      longitude: data.longitude,
+    }
+  } catch {
+    return null
+  }
+}
+
 export function useLocation() {
   const [location, setLocation] = useState<LocationData | null>(null)
   const [loading, setLoading] = useState(true)
   const [needsPrompt, setNeedsPrompt] = useState(false)
   const [needsFallback, setNeedsFallback] = useState(false)
 
-  useEffect(() => {
-    const cached = getCachedLocation()
-    if (cached) {
-      setLocation(cached)
-      setLoading(false)
-      return
-    }
-    setLoading(false)
-    setNeedsPrompt(true)
-  }, [])
-
-  const requestGeolocation = useCallback(async () => {
+  const doGeolocate = useCallback(async () => {
     setLoading(true)
     setNeedsPrompt(false)
 
@@ -82,7 +96,7 @@ export function useLocation() {
       const position = await new Promise<GeolocationPosition>(
         (resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
-            timeout: 10000,
+            timeout: 5000,
             maximumAge: 300000,
           })
         },
@@ -90,7 +104,6 @@ export function useLocation() {
 
       const { latitude, longitude } = position.coords
       const geo = await reverseGeocode(latitude, longitude)
-
       const resolved = geo ?? stateFromCoordinates(latitude, longitude)
 
       if (resolved) {
@@ -103,15 +116,35 @@ export function useLocation() {
         cacheLocation(data)
         setLocation(data)
         setLoading(false)
-      } else {
-        setLoading(false)
-        setNeedsFallback(true)
+        return
       }
     } catch {
-      setLoading(false)
-      setNeedsFallback(true)
+      // Browser geolocation failed — fall through to IP lookup
     }
+
+    // Fallback: IP-based geolocation
+    const ipResult = await ipGeolocate()
+    if (ipResult) {
+      cacheLocation(ipResult)
+      setLocation(ipResult)
+      setLoading(false)
+      return
+    }
+
+    setLoading(false)
+    setNeedsFallback(true)
   }, [])
+
+  useEffect(() => {
+    const cached = getCachedLocation()
+    if (cached) {
+      setLocation(cached)
+      setLoading(false)
+      return
+    }
+
+    doGeolocate()
+  }, [doGeolocate])
 
   const setManualLocation = useCallback(
     (regionCode: string, locationLabel: string) => {
@@ -129,7 +162,7 @@ export function useLocation() {
     loading,
     needsPrompt,
     needsFallback,
-    requestGeolocation,
+    requestGeolocation: doGeolocate,
     setManualLocation,
   }
 }
