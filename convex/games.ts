@@ -266,8 +266,10 @@ function validatePrimaryAnswer(
   },
 ): boolean {
   if (difficulty === 'easy') {
-    // Primary question: edible/medicinal/neutral/poisonous?
-    return answer.toLowerCase() === plant.category.toLowerCase()
+    // Normalize: treat 'edible' and 'neutral' as equivalent
+    const normalizedAnswer = answer.toLowerCase() === 'edible' ? 'neutral' : answer.toLowerCase()
+    const normalizedCategory = plant.category.toLowerCase() === 'edible' ? 'neutral' : plant.category.toLowerCase()
+    return normalizedAnswer === normalizedCategory
   }
   // Medium and hard: common name?
   return plant.commonNames.some(

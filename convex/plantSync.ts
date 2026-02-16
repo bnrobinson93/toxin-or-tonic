@@ -185,12 +185,12 @@ async function fetchFallbackImage(
 
 function determineCategory(
   species: FloraSpeciesBasic,
-  edibleParts: string[],
+  _edibleParts: string[],
   medicinalUses: string[],
 ): 'edible' | 'medicinal' | 'neutral' | 'poisonous' {
   if (species.noxious || species.invasive_alert) return 'poisonous'
-  if (edibleParts.length > 0) return 'edible'
   if (medicinalUses.length > 0) return 'medicinal'
+  // Edible plants are now categorized as neutral for gameplay simplicity
   return 'neutral'
 }
 
