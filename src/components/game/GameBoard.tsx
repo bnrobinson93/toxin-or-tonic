@@ -27,7 +27,7 @@ interface GameBoardProps {
   }) => void
 }
 
-const CATEGORY_OPTIONS = ['edible', 'medicinal', 'neutral', 'poisonous']
+const CATEGORY_OPTIONS = ['neutral', 'medicinal', 'poisonous']
 
 export default function GameBoard({
   sessionId,
@@ -59,6 +59,7 @@ export default function GameBoard({
   >([])
 
   const submitAnswer = useMutation(api.games.submitAnswer)
+  const primaryAnswerRef = useRef<string | null>(null)
 
   // Fetch current round data
   const roundData = useQuery(api.games.getRoundData, {
@@ -149,6 +150,10 @@ export default function GameBoard({
   const handlePrimaryAnswer = useCallback(
     async (answer: string) => {
       setPrimaryAnswer(answer)
+      primaryAnswerRef.current = answer
+
+      // If already in bonus phase, stay there (user is re-selecting primary answer)
+      if (phase === 'bonus') return
 
       if (difficulty === 'easy') {
         // For easy: after primary (category), show bonus (common name)
@@ -158,7 +163,7 @@ export default function GameBoard({
         setPhase('bonus')
       }
     },
-    [difficulty],
+    [difficulty, phase],
   )
 
   const handleBonusAnswer = useCallback(
@@ -171,7 +176,7 @@ export default function GameBoard({
         const result = await submitAnswer({
           sessionId,
           roundIndex: currentRound,
-          primaryAnswer: primaryAnswer!,
+          primaryAnswer: primaryAnswerRef.current!,
           bonusAnswer: answer,
           timeToAnswerMs,
         })
@@ -203,7 +208,7 @@ export default function GameBoard({
       const result = await submitAnswer({
         sessionId,
         roundIndex: currentRound,
-        primaryAnswer: primaryAnswer!,
+        primaryAnswer: primaryAnswerRef.current!,
         timeToAnswerMs,
       })
 
@@ -238,6 +243,7 @@ export default function GameBoard({
     setCurrentRound((prev) => prev + 1)
     setPhase('answering')
     setPrimaryAnswer(null)
+    primaryAnswerRef.current = null
     setBonusAnswer(null)
   }, [currentRound, onGameComplete, totalScore, roundResults])
 
@@ -277,7 +283,7 @@ export default function GameBoard({
           <div className="space-y-2">
             <p className="font-display font-medium text-sm" id="primary-question">
               {difficulty === 'easy'
-                ? 'Is this plant edible, medicinal, neutral, or poisonous?'
+                ? 'Is this plant medicinal, neutral, or poisonous?'
                 : 'What is this plant?'}
             </p>
             <AnswerOptions
@@ -285,7 +291,7 @@ export default function GameBoard({
               correctAnswer={null}
               selectedAnswer={primaryAnswer}
               onSelect={handlePrimaryAnswer}
-              disabled={phase !== 'answering'}
+              disabled={false}
               columns={2}
             />
           </div>

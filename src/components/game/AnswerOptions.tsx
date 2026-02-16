@@ -52,7 +52,7 @@ export default function AnswerOptions({
               extraClass,
             )}
             onClick={() => onSelect(option)}
-            disabled={disabled || selectedAnswer !== null}
+            disabled={disabled}
             aria-label={`Answer option ${index + 1}: ${option}`}
             aria-pressed={isSelected}
           >
