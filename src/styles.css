@@ -11,7 +11,9 @@
 @import '@fontsource/fredoka/600.css';
 @import '@fontsource/fredoka/700.css';
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant meadow (&:is(.meadow *));
+@custom-variant forest (&:is(.forest *));
+@custom-variant midnight (&:is(.midnight *));
 
 body {
   @apply m-0;
@@ -20,6 +22,106 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Meadow Theme (Light) - Current warm palette */
+.meadow {
+  --background: oklch(0.97 0.01 90);
+  --foreground: oklch(0.25 0.02 50);
+  --card: oklch(0.98 0.008 85);
+  --card-foreground: oklch(0.25 0.02 50);
+  --popover: oklch(0.98 0.008 85);
+  --popover-foreground: oklch(0.25 0.02 50);
+  --primary: oklch(0.45 0.12 145);
+  --primary-foreground: oklch(0.98 0.005 90);
+  --secondary: oklch(0.75 0.08 65);
+  --secondary-foreground: oklch(0.25 0.02 50);
+  --muted: oklch(0.93 0.015 85);
+  --muted-foreground: oklch(0.5 0.03 50);
+  --accent: oklch(0.93 0.015 85);
+  --accent-foreground: oklch(0.25 0.02 50);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.98 0.005 90);
+  --border: oklch(0.88 0.02 80);
+  --input: oklch(0.88 0.02 80);
+  --ring: oklch(0.45 0.12 145);
+  --chart-1: oklch(0.45 0.12 145);
+  --chart-2: oklch(0.75 0.08 65);
+  --chart-3: oklch(0.55 0.15 310);
+  --chart-4: oklch(0.7 0.12 85);
+  --chart-5: oklch(0.55 0.2 25);
+
+  --edible: oklch(0.55 0.16 145);
+  --medicinal: oklch(0.55 0.15 310);
+  --neutral: oklch(0.7 0.12 85);
+  --poisonous: oklch(0.55 0.2 25);
+}
+
+/* Forest Theme - Deep forest greens with warm amber */
+.forest {
+  --background: oklch(0.18 0.03 145);
+  --foreground: oklch(0.93 0.02 85);
+  --card: oklch(0.22 0.025 145);
+  --card-foreground: oklch(0.93 0.02 85);
+  --popover: oklch(0.22 0.025 145);
+  --popover-foreground: oklch(0.93 0.02 85);
+  --primary: oklch(0.65 0.12 145);
+  --primary-foreground: oklch(0.15 0.01 50);
+  --secondary: oklch(0.35 0.06 145);
+  --secondary-foreground: oklch(0.93 0.02 85);
+  --muted: oklch(0.28 0.02 145);
+  --muted-foreground: oklch(0.7 0.03 85);
+  --accent: oklch(0.35 0.05 100);
+  --accent-foreground: oklch(0.93 0.02 85);
+  --destructive: oklch(0.55 0.18 25);
+  --destructive-foreground: oklch(0.98 0.005 90);
+  --border: oklch(0.3 0.02 145);
+  --input: oklch(0.3 0.02 145);
+  --ring: oklch(0.65 0.12 145);
+  --chart-1: oklch(0.65 0.12 145);
+  --chart-2: oklch(0.55 0.1 85);
+  --chart-3: oklch(0.6 0.15 310);
+  --chart-4: oklch(0.7 0.1 100);
+  --chart-5: oklch(0.55 0.18 25);
+
+  --edible: oklch(0.7 0.16 145);
+  --medicinal: oklch(0.65 0.15 310);
+  --neutral: oklch(0.75 0.1 85);
+  --poisonous: oklch(0.6 0.2 25);
+}
+
+/* Midnight Theme - Deep navy-teal with soft mint */
+.midnight {
+  --background: oklch(0.15 0.02 220);
+  --foreground: oklch(0.92 0.01 160);
+  --card: oklch(0.2 0.018 220);
+  --card-foreground: oklch(0.92 0.01 160);
+  --popover: oklch(0.2 0.018 220);
+  --popover-foreground: oklch(0.92 0.01 160);
+  --primary: oklch(0.6 0.1 200);
+  --primary-foreground: oklch(0.1 0.01 50);
+  --secondary: oklch(0.3 0.04 220);
+  --secondary-foreground: oklch(0.92 0.01 160);
+  --muted: oklch(0.25 0.02 220);
+  --muted-foreground: oklch(0.65 0.03 180);
+  --accent: oklch(0.35 0.05 280);
+  --accent-foreground: oklch(0.92 0.01 160);
+  --destructive: oklch(0.5 0.18 25);
+  --destructive-foreground: oklch(0.98 0.005 90);
+  --border: oklch(0.28 0.02 220);
+  --input: oklch(0.28 0.02 220);
+  --ring: oklch(0.6 0.1 200);
+  --chart-1: oklch(0.6 0.1 200);
+  --chart-2: oklch(0.55 0.08 180);
+  --chart-3: oklch(0.65 0.15 310);
+  --chart-4: oklch(0.7 0.08 160);
+  --chart-5: oklch(0.55 0.18 25);
+
+  --edible: oklch(0.65 0.16 160);
+  --medicinal: oklch(0.65 0.15 310);
+  --neutral: oklch(0.7 0.1 180);
+  --poisonous: oklch(0.55 0.2 25);
+}
+
+/* Default to meadow theme */
 :root {
   --background: oklch(0.97 0.01 90);
   --foreground: oklch(0.25 0.02 50);
@@ -51,38 +153,6 @@ body {
   --medicinal: oklch(0.55 0.15 310);
   --neutral: oklch(0.7 0.12 85);
   --poisonous: oklch(0.55 0.2 25);
-}
-
-.dark {
-  --background: oklch(0.2 0.02 50);
-  --foreground: oklch(0.93 0.01 85);
-  --card: oklch(0.25 0.02 50);
-  --card-foreground: oklch(0.93 0.01 85);
-  --popover: oklch(0.25 0.02 50);
-  --popover-foreground: oklch(0.93 0.01 85);
-  --primary: oklch(0.55 0.14 145);
-  --primary-foreground: oklch(0.15 0.01 50);
-  --secondary: oklch(0.45 0.06 65);
-  --secondary-foreground: oklch(0.93 0.01 85);
-  --muted: oklch(0.3 0.02 50);
-  --muted-foreground: oklch(0.65 0.03 80);
-  --accent: oklch(0.3 0.02 50);
-  --accent-foreground: oklch(0.93 0.01 85);
-  --destructive: oklch(0.45 0.18 25);
-  --destructive-foreground: oklch(0.93 0.01 85);
-  --border: oklch(0.35 0.02 50);
-  --input: oklch(0.35 0.02 50);
-  --ring: oklch(0.55 0.14 145);
-  --chart-1: oklch(0.55 0.14 145);
-  --chart-2: oklch(0.65 0.08 65);
-  --chart-3: oklch(0.6 0.15 310);
-  --chart-4: oklch(0.65 0.1 85);
-  --chart-5: oklch(0.55 0.18 25);
-
-  --edible: oklch(0.6 0.16 145);
-  --medicinal: oklch(0.6 0.15 310);
-  --neutral: oklch(0.7 0.1 85);
-  --poisonous: oklch(0.6 0.2 25);
 }
 
 @theme inline {

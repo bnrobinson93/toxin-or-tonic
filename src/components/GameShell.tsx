@@ -10,6 +10,7 @@ import { useMutation } from "convex/react";
 import { Leaf, Trophy } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { api } from "../../convex/_generated/api";
+import { ThemeToggle } from "./theme-toggle";
 import { Button } from "./ui/button";
 
 const ANON_ID_KEY = "tot_anonymous_id";
@@ -81,6 +82,7 @@ export default function GameShell({ children }: { children: React.ReactNode }) {
 					</nav>
 
 					<div className="flex items-center gap-2">
+						<ThemeToggle />
 						<SignedIn>
 							<Link
 								to="/account"

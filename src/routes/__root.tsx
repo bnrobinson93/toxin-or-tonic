@@ -9,6 +9,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { getLocale } from "@/paraglide/runtime";
 import Footer from "../components/Footer";
 import GameShell from "../components/GameShell";
+import { ThemeProvider } from "../components/theme-provider";
 import ClerkProvider from "../integrations/clerk/provider";
 import ConvexProvider from "../integrations/convex/provider";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
@@ -56,29 +57,37 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang={getLocale()}>
+		<html lang={getLocale()} suppressHydrationWarning>
 			<head>
 				<HeadContent />
 			</head>
 			<body>
-				<ClerkProvider>
-					<ConvexProvider>
-						<GameShell>{children}</GameShell>
-						<Footer />
-						<TanStackDevtools
-							config={{
-								position: "bottom-right",
-							}}
-							plugins={[
-								{
-									name: "Tanstack Router",
-									render: <TanStackRouterDevtoolsPanel />,
-								},
-								TanStackQueryDevtools,
-							]}
-						/>
-					</ConvexProvider>
-				</ClerkProvider>
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="meadow"
+					enableSystem={false}
+					disableTransitionOnChange={false}
+					themes={["meadow", "forest", "midnight"]}
+				>
+					<ClerkProvider>
+						<ConvexProvider>
+							<GameShell>{children}</GameShell>
+							<Footer />
+							<TanStackDevtools
+								config={{
+									position: "bottom-right",
+								}}
+								plugins={[
+									{
+										name: "Tanstack Router",
+										render: <TanStackRouterDevtoolsPanel />,
+									},
+									TanStackQueryDevtools,
+								]}
+							/>
+						</ConvexProvider>
+					</ClerkProvider>
+				</ThemeProvider>
 				<Scripts />
 			</body>
 		</html>
