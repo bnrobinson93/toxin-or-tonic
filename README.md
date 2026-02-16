@@ -1,6 +1,6 @@
-# Feed or Weed
+# Toxin or Tonic
 
-A plant identification game that challenges you to tell the difference between a feast and a fiasco. Identify plants from your region across three difficulty modes, earn scores, and compete on a geographic leaderboard.
+A plant identification game that challenges you to tell the difference between a remedy and a risk. Identify plants from your region across three difficulty modes, earn scores, and compete on a geographic leaderboard.
 
 ## How It Works
 
