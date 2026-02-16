@@ -7,6 +7,7 @@ interface LeaderboardEntry {
   avatarUrl?: string | null
   totalScore: number
   completedAt: number
+  regionCode?: string
 }
 
 interface LeaderboardTableProps {
@@ -71,6 +72,11 @@ export default function LeaderboardTable({
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
                 {entry.displayName}
+                {entry.regionCode && (
+                  <span className="ml-1.5 text-[10px] font-mono text-muted-foreground bg-muted px-1 py-0.5 rounded">
+                    {entry.regionCode}
+                  </span>
+                )}
               </p>
               <p className="text-xs text-muted-foreground">
                 {new Date(entry.completedAt).toLocaleDateString()}

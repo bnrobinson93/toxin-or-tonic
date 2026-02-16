@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Leaf, Trophy } from 'lucide-react'
 import {
@@ -5,10 +6,51 @@ import {
   SignedOut,
   SignInButton,
   UserButton,
+  useUser,
 } from '@clerk/tanstack-react-start'
+import { useMutation } from 'convex/react'
+import { api } from '../../convex/_generated/api'
 import { Button } from './ui/button'
 
+const ANON_ID_KEY = 'fow_anonymous_id'
+
+function useClaimOnSignIn() {
+  const { user } = useUser()
+  const claimAnonymousGames = useMutation(api.games.claimAnonymousGames)
+  const getOrCreateProfile = useMutation(api.users.getOrCreateProfile)
+  const claimedRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!user) return
+    // Only claim once per user session
+    if (claimedRef.current === user.id) return
+    claimedRef.current = user.id
+
+    const claim = async () => {
+      await getOrCreateProfile({
+        clerkUserId: user.id,
+        displayName: user.fullName ?? user.emailAddresses[0]?.emailAddress ?? 'Player',
+        avatarUrl: user.imageUrl,
+        email: user.emailAddresses[0]?.emailAddress,
+      })
+
+      const anonymousId = localStorage.getItem(ANON_ID_KEY)
+      if (anonymousId) {
+        await claimAnonymousGames({
+          anonymousId,
+          clerkUserId: user.id,
+          displayName: user.fullName ?? 'Player',
+          avatarUrl: user.imageUrl,
+        })
+      }
+    }
+
+    claim()
+  }, [user, claimAnonymousGames, getOrCreateProfile])
+}
+
 export default function GameShell({ children }: { children: React.ReactNode }) {
+  useClaimOnSignIn()
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-40">
