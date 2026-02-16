@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle, Info } from 'lucide-react'
+import { CheckCircle, XCircle, Info, AlertTriangle, Leaf, Utensils } from 'lucide-react'
 import { Card, CardContent } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
@@ -37,6 +37,9 @@ export default function RoundResult({
   onContinue,
   isLastRound,
 }: RoundResultProps) {
+  // Normalize 'edible' to 'neutral' for display
+  const displayCategory = plant.category === 'edible' ? 'neutral' : plant.category
+
   return (
     <Card className="max-w-lg mx-auto">
       <CardContent className="pt-6 space-y-4">
@@ -62,27 +65,51 @@ export default function RoundResult({
             <span className="font-display font-medium">
               {plant.commonNames[0] ?? plant.scientificName}
             </span>
-            <Badge className={categoryColors[plant.category] ?? ''}>
-              {plant.category}
+            <Badge className={categoryColors[displayCategory] ?? ''}>
+              {displayCategory}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground italic">
             {plant.scientificName}
           </p>
-          {plant.edibleParts.length > 0 && (
-            <p className="text-sm text-muted-foreground">
-              Edible parts: {plant.edibleParts.join(', ')}
-            </p>
+          {plant.toxicityInfo && (
+            <div className="mt-2 p-2 rounded-md bg-poisonous/10 border border-poisonous/20">
+              <div className="flex items-center gap-1.5 mb-1">
+                <AlertTriangle className="h-3.5 w-3.5 text-poisonous" />
+                <span className="text-xs font-semibold text-poisonous">Toxicity Warning</span>
+              </div>
+              <ul className="list-disc list-inside text-sm text-poisonous space-y-0.5">
+                {plant.toxicityInfo.split(/[,;]/).map((item, i) => (
+                  <li key={i}>{item.trim()}</li>
+                ))}
+              </ul>
+            </div>
           )}
           {plant.medicinalUses.length > 0 && (
-            <p className="text-sm text-muted-foreground">
-              Medicinal uses: {plant.medicinalUses.join(', ')}
-            </p>
+            <div className="mt-2 p-2 rounded-md bg-medicinal/10 border border-medicinal/20">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Leaf className="h-3.5 w-3.5 text-medicinal" />
+                <span className="text-xs font-semibold text-medicinal">Medicinal Uses</span>
+              </div>
+              <ul className="list-disc list-inside text-sm text-muted-foreground space-y-0.5">
+                {plant.medicinalUses.map((use, i) => (
+                  <li key={i}>{use}</li>
+                ))}
+              </ul>
+            </div>
           )}
-          {plant.toxicityInfo && (
-            <p className="text-sm text-poisonous">
-              Toxicity: {plant.toxicityInfo}
-            </p>
+          {plant.edibleParts.length > 0 && (
+            <div className="mt-2 p-2 rounded-md bg-edible/10 border border-edible/20">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Utensils className="h-3.5 w-3.5 text-edible" />
+                <span className="text-xs font-semibold text-edible">Edible Parts</span>
+              </div>
+              <ul className="list-disc list-inside text-sm text-muted-foreground space-y-0.5">
+                {plant.edibleParts.map((part, i) => (
+                  <li key={i}>{part}</li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
 
