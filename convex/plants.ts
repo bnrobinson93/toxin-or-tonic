@@ -52,7 +52,23 @@ export const getRandomPlants = query({
     // Use plants with images first, then fill with those without
     const filtered = [...withImages, ...withoutImages]
 
-    return filtered.slice(0, args.count)
+    // Bias toward interesting categories: medicinal and poisonous plants
+    // get a higher selection weight so games aren't dominated by neutral plants.
+    // Uses a weighted shuffle: each plant gets a random score multiplied by its
+    // category weight, then we pick the top N.
+    const CATEGORY_WEIGHT: Record<string, number> = {
+      poisonous: 3,
+      medicinal: 3,
+      neutral: 1,
+      edible: 1,
+    }
+    const weighted = filtered.map((p) => ({
+      plant: p,
+      score: Math.random() * (CATEGORY_WEIGHT[p.category] ?? 1),
+    }))
+    weighted.sort((a, b) => b.score - a.score)
+
+    return weighted.slice(0, args.count).map((w) => w.plant)
   },
 })
 
