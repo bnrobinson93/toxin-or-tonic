@@ -11,6 +11,8 @@ import {
   Eye,
   MapPin,
   Flower2,
+  ShieldAlert,
+  Search,
 } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
@@ -42,6 +44,9 @@ export interface PlantInfo {
   plantHabits?: string[] | null;
   imageGallery?: GalleryImage[] | null;
   imageUrls?: string[] | null;
+  familyName?: string | null;
+  genusName?: string | null;
+  commonMisidentifications?: string[] | null;
 }
 
 interface RoundResultProps {
@@ -94,8 +99,11 @@ export default function RoundResult({
     plant.bloomMonths?.length ||
     plant.plantHabits?.length ||
     plant.parsedEdibilityInfo?.length ||
-    (plant.parsedMedicinalInfo?.length && displayCategory !== "medicinal") ||
-    (plant.parsedToxicityInfo?.length && displayCategory !== "poisonous")
+    plant.parsedMedicinalInfo?.length ||
+    plant.parsedToxicityInfo?.length ||
+    plant.identificationTips?.length ||
+    plant.commonMisidentifications?.length ||
+    plant.familyName
   );
 
   return (
@@ -292,6 +300,66 @@ export default function RoundResult({
                   </div>
                 ) : null}
 
+                {/* Identification tips */}
+                {plant.identificationTips?.length ? (
+                  <InfoCard
+                    icon={
+                      <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                    }
+                    title="What to Look For"
+                    items={plant.identificationTips}
+                  />
+                ) : null}
+
+                {/* Common misidentifications */}
+                {plant.commonMisidentifications?.length ? (
+                  <InfoCard
+                    icon={
+                      <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
+                    }
+                    title="Common Misidentifications"
+                    titleClass="text-amber-600"
+                    bgClass="bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800"
+                    items={plant.commonMisidentifications}
+                  />
+                ) : null}
+
+                {/* Toxicity details */}
+                {plant.parsedToxicityInfo?.length ? (
+                  <InfoCard
+                    icon={
+                      <AlertTriangle className="h-3.5 w-3.5 text-poisonous" />
+                    }
+                    title="Toxicity Details"
+                    titleClass="text-poisonous"
+                    bgClass="bg-poisonous/10 border-poisonous/20"
+                    items={plant.parsedToxicityInfo}
+                    itemClass="text-poisonous"
+                  />
+                ) : null}
+
+                {/* Medicinal details */}
+                {plant.parsedMedicinalInfo?.length ? (
+                  <InfoCard
+                    icon={<Leaf className="h-3.5 w-3.5 text-medicinal" />}
+                    title="Medicinal Details"
+                    titleClass="text-medicinal"
+                    bgClass="bg-medicinal/10 border-medicinal/20"
+                    items={plant.parsedMedicinalInfo}
+                  />
+                ) : null}
+
+                {/* Edibility details */}
+                {plant.parsedEdibilityInfo?.length ? (
+                  <InfoCard
+                    icon={<Utensils className="h-3.5 w-3.5 text-edible" />}
+                    title="Edibility Details"
+                    titleClass="text-edible"
+                    bgClass="bg-edible/10 border-edible/20"
+                    items={plant.parsedEdibilityInfo}
+                  />
+                ) : null}
+
                 {/* Description */}
                 {plant.description && (
                   <div>
@@ -362,40 +430,28 @@ export default function RoundResult({
                   </div>
                 )}
 
-                {/* Full parsed details (show sections not already visible above) */}
-                {displayCategory !== "poisonous" &&
-                plant.parsedToxicityInfo?.length ? (
-                  <InfoCard
-                    icon={
-                      <AlertTriangle className="h-3.5 w-3.5 text-poisonous" />
-                    }
-                    title="Toxicity Notes"
-                    titleClass="text-poisonous"
-                    bgClass="bg-poisonous/10 border-poisonous/20"
-                    items={plant.parsedToxicityInfo}
-                    itemClass="text-poisonous"
-                  />
-                ) : null}
-                {displayCategory !== "medicinal" &&
-                plant.parsedMedicinalInfo?.length ? (
-                  <InfoCard
-                    icon={<Leaf className="h-3.5 w-3.5 text-medicinal" />}
-                    title="Medicinal Notes"
-                    titleClass="text-medicinal"
-                    bgClass="bg-medicinal/10 border-medicinal/20"
-                    items={plant.parsedMedicinalInfo}
-                  />
-                ) : null}
-                {plant.parsedEdibilityInfo?.length &&
-                displayCategory !== "medicinal" ? (
-                  <InfoCard
-                    icon={<Utensils className="h-3.5 w-3.5 text-edible" />}
-                    title="Edibility Notes"
-                    titleClass="text-edible"
-                    bgClass="bg-edible/10 border-edible/20"
-                    items={plant.parsedEdibilityInfo}
-                  />
-                ) : null}
+                {/* Taxonomy */}
+                {(plant.familyName || plant.genusName) && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">
+                      Taxonomy
+                    </p>
+                    <div className="text-sm text-muted-foreground space-y-0.5">
+                      {plant.familyName && (
+                        <p>
+                          <span className="font-medium">Family:</span>{" "}
+                          {plant.familyName}
+                        </p>
+                      )}
+                      {plant.genusName && (
+                        <p>
+                          <span className="font-medium">Genus:</span>{" "}
+                          {plant.genusName}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

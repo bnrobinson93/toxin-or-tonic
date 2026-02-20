@@ -231,6 +231,9 @@ export const submitAnswer = mutation({
         plantHabits: plant.plantHabits,
         imageGallery: plant.imageGallery,
         imageUrls: plant.imageUrls,
+        familyName: plant.familyName,
+        genusName: plant.genusName,
+        commonMisidentifications: plant.commonMisidentifications,
       },
     };
   },

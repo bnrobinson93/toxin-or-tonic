@@ -46,6 +46,7 @@ export default defineSchema({
     parsedToxicityInfo: v.optional(v.array(v.string())),
     parsedEdibilityInfo: v.optional(v.array(v.string())),
     identificationTips: v.optional(v.array(v.string())),
+    commonMisidentifications: v.optional(v.array(v.string())),
     enrichmentVersion: v.optional(v.float64()),
     nativity: v.union(
       v.literal("Native"),

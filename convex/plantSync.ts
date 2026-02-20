@@ -47,6 +47,7 @@ export const upsertPlant = internalMutation({
     parsedToxicityInfo: v.optional(v.array(v.string())),
     parsedEdibilityInfo: v.optional(v.array(v.string())),
     identificationTips: v.optional(v.array(v.string())),
+    commonMisidentifications: v.optional(v.array(v.string())),
     enrichmentVersion: v.optional(v.float64()),
     nativity: v.union(
       v.literal("Native"),
@@ -170,10 +171,17 @@ function parseDescriptionText(
   toxicity: string[];
   edibility: string[];
   identification: string[];
+  misidentification: string[];
 } {
   const text = [description, details].filter(Boolean).join(" ");
   if (!text)
-    return { medicinal: [], toxicity: [], edibility: [], identification: [] };
+    return {
+      medicinal: [],
+      toxicity: [],
+      edibility: [],
+      identification: [],
+      misidentification: [],
+    };
 
   const sentences = text
     .split(/[.!?]+/)
@@ -188,12 +196,15 @@ function parseDescriptionText(
     /edible|eaten|consumable|culinary|forag|flavor|nutritious/i;
   const identificationRe =
     /recogniz|identif|distinguish|characteristic|distinctive|leaf|flower|bark|petal/i;
+  const misidentificationRe =
+    /confused with|mistaken for|similar to|resembl|look-?alike|often misidentif/i;
 
   return {
     medicinal: sentences.filter((s) => medicinalRe.test(s)),
     toxicity: sentences.filter((s) => toxicityRe.test(s)),
     edibility: sentences.filter((s) => edibilityRe.test(s)),
     identification: sentences.filter((s) => identificationRe.test(s)),
+    misidentification: sentences.filter((s) => misidentificationRe.test(s)),
   };
 }
 
@@ -562,6 +573,10 @@ export const syncRegion = action({
               parsedEdibilityInfo:
                 parsed.edibility.length > 0 ? parsed.edibility : undefined,
               identificationTips: idTips.length > 0 ? idTips : undefined,
+              commonMisidentifications:
+                parsed.misidentification.length > 0
+                  ? parsed.misidentification
+                  : undefined,
               enrichmentVersion: ENRICHMENT_VERSION,
               nativity: validNativity,
               regionCode: args.regionCode,
