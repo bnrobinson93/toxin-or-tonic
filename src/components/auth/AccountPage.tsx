@@ -1,24 +1,23 @@
-import { useUser } from '@clerk/tanstack-react-start'
-import { useQuery } from 'convex/react'
-import { api } from '../../../convex/_generated/api'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
-import { Separator } from '../ui/separator'
-import { Badge } from '../ui/badge'
-import { Trophy, Gamepad2, TrendingUp, Star } from 'lucide-react'
+import { useUser } from "@clerk/tanstack-react-start";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Badge } from "../ui/badge";
+import { Trophy, Gamepad2, TrendingUp, Star } from "lucide-react";
 
 export default function AccountPage() {
-  const { user } = useUser()
+  const { user } = useUser();
 
   const stats = useQuery(
     api.users.getPlayerStats,
-    user ? { clerkUserId: user.id } : 'skip',
-  )
+    user ? { clerkUserId: user.id } : "skip",
+  );
 
-  if (!user) return null
+  if (!user) return null;
 
-  const profile = stats?.profile
-  const recentGames = stats?.recentGames ?? []
+  const profile = stats?.profile;
+  const recentGames = stats?.recentGames ?? [];
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
@@ -28,7 +27,9 @@ export default function AccountPage() {
             <Avatar className="h-16 w-16">
               <AvatarImage src={user.imageUrl} />
               <AvatarFallback className="text-xl">
-                {user.firstName?.charAt(0) ?? user.emailAddresses[0]?.emailAddress.charAt(0) ?? '?'}
+                {user.firstName?.charAt(0) ??
+                  user.emailAddresses[0]?.emailAddress.charAt(0) ??
+                  "?"}
               </AvatarFallback>
             </Avatar>
             <div>
@@ -98,7 +99,7 @@ export default function AccountPage() {
                     </span>
                     <Badge
                       variant={
-                        game.status === 'completed' ? 'default' : 'secondary'
+                        game.status === "completed" ? "default" : "secondary"
                       }
                       className="text-xs"
                     >
@@ -113,7 +114,7 @@ export default function AccountPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 function StatCard({
@@ -121,9 +122,9 @@ function StatCard({
   label,
   value,
 }: {
-  icon: React.ReactNode
-  label: string
-  value: number
+  icon: React.ReactNode;
+  label: string;
+  value: number;
 }) {
   return (
     <Card>
@@ -135,5 +136,5 @@ function StatCard({
         <p className="text-xs text-muted-foreground">{label}</p>
       </CardContent>
     </Card>
-  )
+  );
 }
